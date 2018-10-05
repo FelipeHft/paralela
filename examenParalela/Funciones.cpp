@@ -1,8 +1,7 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
+#include <string.h>
+#include <iostream>
+#include <stdio.h>
+using namespace std;
 
 int cuadradoMagico(int matriz[][3]){
     int constanteM = 0;
@@ -69,5 +68,45 @@ int cuadradoMagico(int matriz[][3]){
         resultado = 1;
     }
 
-    return resultado;
+    return resultado;   //devuelve si la matriz es un cuadrado magico o no
+}
+
+void transformarMatriz(string linea, int matriz[][3]){
+    int largo = linea.length();
+    int restaAux;
+    int num, pos=1, contador=0;
+    string numS;
+    int arregloAux[9];
+    for(int i=1; i<largo; i++){ //se recorre la linea
+        if(linea[i] == ',' || linea[i] == ';'){ 
+            if(contador == 0){
+                restaAux = i-1;
+                numS = linea.substr(1, restaAux);   
+            }
+            else{
+                restaAux = i - pos - 1;
+                numS = linea.substr(pos+1, restaAux);
+            }
+            pos = i;
+            num = stoi(numS);
+            arregloAux[contador] = num;    
+            contador++;
+        }
+        if(linea[i] == ']'){
+            restaAux = i - pos - 1;
+            numS = linea.substr(pos+1, restaAux);
+            num = stoi(numS);
+            arregloAux[contador] = num;
+        }
+    }
+    
+    int posArreglo = 0;
+    for(int i = 0; i<3; i++){ //convertir de arreglo a matriz
+        for(int j = 0; j<3; j++){
+            matriz[i][j] = arregloAux[posArreglo];
+            posArreglo++;
+        }
+    }
+    
+    
 }
