@@ -1,2 +1,2 @@
-# Computacion paralela y distribuida
+# Exámen del ramo Computación paralela y distribuida
 
