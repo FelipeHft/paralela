@@ -8,7 +8,7 @@ Funciones.o:	clean	Funciones.cpp	Funciones.h
 	
 all: Funciones.o
 	$(CXX) $(CXXFLAGS) -o programita main.cpp Funciones.o 
-
+	
 clean:
 	rm -fr *.o a.out programita
 

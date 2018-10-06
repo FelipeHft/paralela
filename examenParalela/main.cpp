@@ -4,85 +4,88 @@
 #include "Funciones.h"
 #include <fstream>
 #include <valarray>
+#include <string.h>
+#include <iostream>
 using namespace std;
 
 /*
  * 
  */
 int main(int argc, char** argv) {
-    //inicializando mpi
-    MPI_Init(NULL, NULL);
-    
-    //obteniendo numero total de procesadores
     int world_size;
-    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
-    
-    //obteniendo 'rank' del procesador
     int world_rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
-    
-    //obteniendo nombre del procesador
-    char processor_name[MPI_MAX_PROCESSOR_NAME];
-    int name_len;
-    MPI_Get_processor_name(processor_name, &name_len);
-    
-    
-    
-    
-    
-    
+    int dest=1;
+    int tag = 0;
+    string linea; 
+    char lineaAux[40];
+    char lineaEnvio[40] = "";
+    MPI_Status estado;
     string opcion = argv[1];
     string rutaEntrada = argv[2];
     string rutaSalida = argv[4];
     int matriz[3][3], resultado;
+
+    
     if(opcion == "-f"){
         ifstream archivo_entrada;
         ofstream archivo_salida;
-        string linea; 
         archivo_entrada.open(rutaEntrada, ios::in);
         archivo_salida.open(rutaSalida, ios::out);
         if(archivo_entrada.fail() && archivo_salida.fail()){
             cout<<"Error al abrir el archivo!"<<endl;
         }
         else{
-            while(!archivo_entrada.eof()){
-                getline(archivo_entrada, linea);
-                transformarMatriz(linea, matriz);
-                resultado = cuadradoMagico(matriz);
-                if(resultado == 0){
-                    archivo_salida << linea<<"\n";
-                }
-                //cout<<linea<<endl;
+            MPI_Init(NULL, NULL); //inicializando mpi
+            MPI_Comm_size(MPI_COMM_WORLD, &world_size);  //obteniendo numero total de procesadores
+            MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);  //obteniendo 'rank' del procesador
+          
+            if(world_rank == 0){
+                while(!archivo_entrada.eof()){  //recorre archivo txt 
+                    getline(archivo_entrada, linea); //guardando linea del txt
+                    strcpy(lineaAux, linea.c_str()); //pasando de string a char
+                    MPI_Send(&lineaAux, strlen(lineaAux)+1, MPI_CHAR, dest, tag, MPI_COMM_WORLD);
+                    cout<<lineaAux<<" enviado desde 0"<<endl;
+                    MPI_Recv(&lineaEnvio, 40, MPI_CHAR, dest, 1, MPI_COMM_WORLD, &estado);
+                    cout<<"0 a recibido el msj: "<<lineaEnvio<<endl;
+                    if(lineaEnvio[0] != 'x'){
+                        linea = lineaAux; //pasando de char a string
+                        archivo_salida << linea<<"\n";
+                        
+                    }                    
+                    dest++; //cambia el procesador de destino
+                    if(dest == 4){
+                        dest = 1;
+                    }
+                    
+                }                
             }
-            archivo_entrada.close();
-            archivo_salida.close();
+                           
+            MPI_Recv(&lineaAux, 40, MPI_CHAR, 0, tag, MPI_COMM_WORLD, &estado);
+            cout<< world_rank <<" a recibido: "<<lineaAux<<endl;
+            linea = lineaAux; //pasando de char a string
+            transformarMatriz(linea, matriz);
+            resultado = cuadradoMagico(matriz);                
+            if(resultado == 0){
+                strcpy(lineaEnvio, linea.c_str());
+                MPI_Send(&lineaEnvio, strlen(lineaAux)+1, MPI_CHAR, 0, 1, MPI_COMM_WORLD);                
+                cout<<world_rank<<" a enviado: "<<lineaEnvio<<endl;
+                //archivo_salida << linea<<"\n";
+            }
+            else{
+                lineaEnvio[0] = 'x';
+                MPI_Send(&lineaEnvio, 1, MPI_CHAR, 0, 1, MPI_COMM_WORLD);
+                cout<<world_rank<<" a enviado: "<<lineaEnvio<<endl;     
+            }
+                    
+            MPI_Finalize();
         }
-        
+        archivo_entrada.close();
+        archivo_salida.close();
     }
     else{
         cout<<"Opción no válida"<<endl;
     }
     
-    
-    
-    
-    
-    
-    
-    
-    /*int matriz[3][3] = {{8,1,6},{3,5,7},{4,9,2}};
-    
-    int res;
-    res = cuadradoMagico(matriz);
-    printf("valor %d\n", res);
-     */
-    
-    
-    //imprimiendo mensajes
-    printf("Hellow world from the processor %s, rank %d out of %d processors\n",
-            processor_name, world_rank, world_size);
-    
-    MPI_Finalize();
     
 }
 
