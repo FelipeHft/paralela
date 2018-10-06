@@ -25,6 +25,8 @@ int main(int argc, char** argv) {
     string rutaEntrada = argv[2];
     string rutaSalida = argv[4];
     int matriz[3][3], resultado;
+    int ierr;
+
 
     
     if(opcion == "-f"){
@@ -36,50 +38,53 @@ int main(int argc, char** argv) {
             cout<<"Error al abrir el archivo!"<<endl;
         }
         else{
-            MPI_Init(NULL, NULL); //inicializando mpi
+            MPI_Init(&argc, &argv); //inicializando mpi
             MPI_Comm_size(MPI_COMM_WORLD, &world_size);  //obteniendo numero total de procesadores
             MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);  //obteniendo 'rank' del procesador
             while(fin == 0){
                 if(world_rank == 0){
-                    while(!archivo_entrada.eof()){  //recorre archivo txt 
-                        if(archivo_entrada.eof()){
-                            fin = 1;
-                            break;
-                        }
-                        
+                    while(!archivo_entrada.eof()){  //recorre archivo txt  
                         getline(archivo_entrada, linea); //guardando linea del txt
-                        if(linea == ""){
+                        strcpy(lineaAux, linea.c_str()); //pasando de string a char              
+                        
+                        MPI_Send(&lineaAux, strlen(lineaAux)+1, MPI_CHAR, dest, tag, MPI_COMM_WORLD);
+                        //cout<<linea<<" enviado desde 0"<<endl;
+                        if(linea.length() < 15){
+                            cout<<"saliendo del while para leer"<<endl;
                             fin = 1;
                             break;
                         }
                         else{
-                            strcpy(lineaAux, linea.c_str()); //pasando de string a char                    
-                            MPI_Send(&lineaAux, strlen(lineaAux)+1, MPI_CHAR, dest, tag, MPI_COMM_WORLD);
-                            cout<<lineaAux<<" enviado desde 0"<<endl;
                             MPI_Recv(&lineaEnvio, 40, MPI_CHAR, dest, 1, MPI_COMM_WORLD, &estado);
+                            //cout<<lineaEnvio<<" recibida por 0"<<endl;
                             if(lineaEnvio[0] != 'x'){
                                 linea = lineaAux; //pasando de char a string
                                 archivo_salida << linea<<"\n";                        
-                            }                    
-                            dest++; //cambia el procesador de destino
-                            if(dest == 4){
-                                dest = 1;
                             }
-                        }                                           
+                        }
+                                            
+                        dest++; //cambia el procesador de destino
+                        if(dest == 4){
+                            dest = 1;
+                        }                                 
                     }                
                 }
-                if(fin == 1) break;
+                
+                MPI_Recv(&lineaAux, 40, MPI_CHAR, 0, tag, MPI_COMM_WORLD, &estado);                                    
+                linea = lineaAux; //pasando de char a string
+                //cout<< world_rank <<" a recibido: "<<linea<<" y su largo es: "<<linea.length()<<endl;
+                if(linea.length() < 15){
+                    cout<<"saliendo del while fin"<<endl;
+                    fin = 1;
+                    break;
+                }
                 else{
-                   MPI_Recv(&lineaAux, 40, MPI_CHAR, 0, tag, MPI_COMM_WORLD, &estado);
-                    cout<< world_rank <<" a recibido: "<<lineaAux<<endl;
-                    linea = lineaAux; //pasando de char a string
                     transformarMatriz(linea, matriz);
                     resultado = cuadradoMagico(matriz);                
                     if(resultado == 0){
                         strcpy(lineaEnvio, linea.c_str());
                         MPI_Send(&lineaEnvio, strlen(lineaAux)+1, MPI_CHAR, 0, 1, MPI_COMM_WORLD);                
                         //cout<<world_rank<<" a enviado: "<<lineaEnvio<<endl;
-                        //archivo_salida << linea<<"\n";
                     }
                     else{
                         lineaEnvio[0] = 'x';
@@ -88,8 +93,11 @@ int main(int argc, char** argv) {
                     } 
                 }                
             }
-             MPI_Finalize();           
+            cout<<"estoy afuera del while fin"<<endl;
+            
+                       
         }
+        cout<<"cerrando arch"<<endl;
         archivo_entrada.close();
         archivo_salida.close();
     }
@@ -97,5 +105,9 @@ int main(int argc, char** argv) {
         cout<<"Opción no válida"<<endl;
     }
     
+    ierr = MPI_Finalize();
+    cout<<"ierr: "<<ierr<<endl;
+    
+    return EXIT_SUCCESS;
     
 }
