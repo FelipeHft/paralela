@@ -78,7 +78,8 @@ void transformarMatriz(string linea, int matriz[][3]){
     string numS;
     int arregloAux[9];
     for(int i=1; i<largo; i++){ //se recorre la linea
-        if(linea[i] == ',' || linea[i] == ';'){ 
+        //se toman las posiciones de ',' y ';' para separarlos de los numeros
+        if(linea[i] == ',' || linea[i] == ';'){  
             if(contador == 0){
                 restaAux = i-1;
                 numS = linea.substr(1, restaAux);   
@@ -88,11 +89,12 @@ void transformarMatriz(string linea, int matriz[][3]){
                 numS = linea.substr(pos+1, restaAux);
             }
             pos = i;
-            num = stoi(numS);
-            arregloAux[contador] = num;    
+            num = stoi(numS); //se transforma el numero de string a int
+            arregloAux[contador] = num; //se agrega el num a un arreglo auxiliar
             contador++;
         }
-        if(linea[i] == ']'){
+        //se guarda el ultimo numero en el arreglo auxiliar
+        if(linea[i] == ']'){ 
             restaAux = i - pos - 1;
             numS = linea.substr(pos+1, restaAux);
             num = stoi(numS);
